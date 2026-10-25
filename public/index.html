@@ -64,7 +64,8 @@ h1,h2,h3,p{margin:0}
 .acts{flex:0 1 auto;min-width:0}
 .sync{flex:0 1 auto;min-width:0}
 .sync span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.me{flex:none}
+.me{flex:none;position:relative}
+.me .gear{position:absolute;right:-5px;bottom:-5px;width:19px;height:19px;padding:2.5px;border-radius:50%;background:var(--surface);color:var(--text-2);stroke-width:2.2;box-shadow:0 0 0 1.5px var(--line-2)}
 @media (max-width:399px){.appbar-in{padding:0 10px;gap:6px}.brand{gap:7px}.logo{width:28px;height:28px}.ttl{font-size:18px}.acts{gap:6px}.sync{padding:0 8px;gap:5px;font-size:12px}.sync .dot{width:8px;height:8px}}
 @media (max-width:339px){.me{width:36px;height:36px}}
 #banner{max-width:760px;margin:12px auto 0;padding:0 14px;display:grid;gap:8px}
@@ -322,6 +323,8 @@ textarea.share{min-height:260px;font-size:15px;line-height:1.4;padding:12px 14px
 .adm-pay{align-items:flex-start}
 .adm-pay .two{margin-top:10px;grid-template-columns:auto auto;justify-content:start}
 .adm-pay.hot{background:var(--info-soft)}
+.mp-on{display:flex;gap:10px;align-items:flex-start;font-size:14.5px;font-weight:600;line-height:1.4}
+.steps.small{gap:10px}.steps.small li{font-size:14px;padding-left:36px}.steps.small li::before{width:24px;height:24px;font-size:13px}
 
 /* ---------- avisos ---------- */
 #toasts{position:fixed;left:0;right:0;top:calc(var(--sat) + 68px);z-index:90;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;padding:0 14px}
@@ -404,6 +407,7 @@ textarea.share{min-height:260px;font-size:15px;line-height:1.4;padding:12px 14px
   <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></symbol>
   <symbol id="i-receipt" viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/></symbol>
   <symbol id="i-history" viewBox="0 0 24 24"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1"/><path d="M3.5 4.5v4.6h4.6"/><path d="M12 7.5V12l3 2"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></symbol>
   <symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 7h9M18 7h2M4 17h2M12 17h8"/><circle cx="15.5" cy="7" r="2.3"/><circle cx="9" cy="17" r="2.3"/></symbol>
   <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></symbol>
   <symbol id="i-chev-r" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
@@ -440,6 +444,7 @@ textarea.share{min-height:260px;font-size:15px;line-height:1.4;padding:12px 14px
   <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></symbol>
   <symbol id="i-calc" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8.5 7.5h7M9 12h.01M12 12h.01M15 12h.01M9 16h.01M12 16h.01M15 16h.01"/></symbol>
   <symbol id="i-basket" viewBox="0 0 24 24"><path d="M4 9h16l-1.6 9.2a2 2 0 0 1-2 1.8H7.6a2 2 0 0 1-2-1.8z"/><path d="M8.5 9l2.5-5M15.5 9L13 4"/></symbol>
+  <symbol id="i-card" viewBox="0 0 24 24"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="M3 10h18M7 15h4"/></symbol>
   <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
   <symbol id="i-ill" viewBox="0 0 96 96"><path d="M14 38h68v40a5 5 0 0 1-5 5H19a5 5 0 0 1-5-5z" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linejoin="round"/><path d="M14 52h68M14 66h68" stroke="currentColor" stroke-width="3.5"/><path d="M48 12c14 3 22 12 21 25-14 0-24-5-27-17 0-4 2-7 6-8z" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linejoin="round"/></symbol>
 </svg>
@@ -1176,6 +1181,7 @@ async function refreshMe() {
     if (!r.ok) return;
     const j = await r.json(); setPlan(j.plan, { admin: j.admin, pay: j.pay });
     if (S.admin) adminPoll();
+    payReturn();
   } catch (e) {}
 }
 async function flush() {
@@ -1661,7 +1667,7 @@ function updateChips() {
     c.className = 'sync ' + si.cls;
     c.innerHTML = '<i class="dot"></i><span>' + esc(si.txt) + (n ? ' · ' + n + ' na fila' : '') + '</span>';
   }
-  const me = $('#chipMe'); if (me && S.me) { me.textContent = S.me.label.charAt(0); me.setAttribute('aria-label', 'Perfil ' + S.me.label + ' — ajustes'); }
+  const me = $('#chipMe'); if (me && S.me && me.dataset.k !== S.me.key) { me.dataset.k = S.me.key; me.innerHTML = esc(S.me.label.charAt(0)) + ico('gear', 'gear'); me.setAttribute('aria-label', 'Ajustes (perfil ' + S.me.label + ')'); }   // a engrenagem mostra que ali ficam os Ajustes
   const t = $('#pageTitle'); if (t) t.textContent = VIEW_TITLE[S.view] || 'Controle Ceasa';
 }
 const noteHTML = (cls, text, extra) => '<div class="note ' + cls + '">' + ico(cls === 'info' ? 'info' : 'alert') + '<div>' + text + (extra || '') + '</div></div>';
@@ -1886,7 +1892,7 @@ function updateCfg() {
     '<p class="cnote" style="margin:8px 4px 0">Loja e Caminhão usam o mesmo e-mail e mostram os mesmos lançamentos. Aqui você só escolhe quem está lançando.</p>' +
     (cloud && S.plan ? (() => { const pi = planInfo(S.plan) || {}; return '<div class="sh-label">Assinatura</div><div class="group">' +
       li('receipt', pi.buy ? priceTxt() + ' por ' + daysTxt() : 'Sua assinatura', esc(pi.line || ''), pi.buy ? 'pay-open' : null, '<span class="badge ' + (pi.cls || '') + '">' + esc(pi.badge || '') + '</span>') +
-      (pi.buy ? li('bolt', pi.buy + ' com Pix', 'Gera um Pix copia e cola com QR Code.', 'pay-open') : '') +
+      (pi.buy ? li('bolt', pi.buy + ' agora', hasCard() ? 'Pix (copia e cola ou QR Code) ou cartão de crédito.' : 'Gera um Pix copia e cola com QR Code.', 'pay-open') : '') +
       (S.admin ? li('settings', 'Administração', 'Cobrança, seu Pix, pagamentos e acessos grátis.', 'admin') : '') + '</div>'; })() : '') +
     '<div class="sh-label">Conta</div><div class="group">' +
     li('help', 'Gerar novo código de recuperação', 'Serve para trocar a senha se você esquecer.', 'new-recovery') +
@@ -2258,6 +2264,8 @@ const WRITE_ACTS = new Set(['new', 'edit', 'desp', 'pay', 'unpay', 'cancel-entry
 const leftTxt = ms => ms <= 0 ? 'terminou' : ms < 3600e3 ? 'falta menos de 1 hora' : ms < 48 * 3600e3 ? 'faltam ' + Math.round(ms / 3600e3) + ' horas' : 'faltam ' + Math.ceil(ms / 864e5) + ' dias';
 const priceTxt = () => money((S.payInfo && S.payInfo.price) || 2990);
 const daysTxt = () => ((S.payInfo && S.payInfo.days) || 30) + ' dias';
+const hasCard = () => !!(S.payInfo && S.payInfo.card);
+const LAST_PAY = 'ceasa_pay_last';
 function planInfo(pl) {
   if (!pl) return null;
   const left = (pl.until || 0) - Date.now();
@@ -2275,10 +2283,10 @@ function planBanner() {
   if (S.mode !== 'cloud' || !S.plan) return '';
   const pl = S.plan, left = (pl.until || 0) - Date.now(), n = S.outbox.length;
   const btn = (t, act) => '<br><button class="btn sm" data-act="' + (act || 'pay-open') + '">' + t + '</button>';
-  if (pl.status === 'expired') return noteHTML('bad', '<b>Período encerrado.</b> Você continua vendo todos os lançamentos. Para lançar de novo: ' + priceTxt() + ' por ' + daysTxt() + ', pago com Pix.' +
-    (n ? ' ' + n + (n === 1 ? ' alteração está guardada' : ' alterações estão guardadas') + ' e ' + (n === 1 ? 'é enviada' : 'são enviadas') + ' assim que liberar.' : ''), btn('Renovar com Pix'));
+  if (pl.status === 'expired') return noteHTML('bad', '<b>Período encerrado.</b> Você continua vendo todos os lançamentos. Para lançar de novo: ' + priceTxt() + ' por ' + daysTxt() + ', pago com Pix' + (hasCard() ? ' ou cartão.' : '.') +
+    (n ? ' ' + n + (n === 1 ? ' alteração está guardada' : ' alterações estão guardadas') + ' e ' + (n === 1 ? 'é enviada' : 'são enviadas') + ' assim que liberar.' : ''), btn('Renovar agora'));
   if (pl.status === 'trial') return noteHTML('info', '<b>Teste grátis:</b> ' + leftTxt(left) + '. Depois, ' + priceTxt() + ' por ' + daysTxt() + '.', btn('Assinar agora'));
-  if (pl.status === 'active' && left < 3 * 864e5) return noteHTML('', 'Sua assinatura vence em ' + fmtStamp(pl.until) + '.', btn('Renovar com Pix'));
+  if (pl.status === 'active' && left < 3 * 864e5) return noteHTML('', 'Sua assinatura vence em ' + fmtStamp(pl.until) + '.', btn('Renovar agora'));
   return '';
 }
 function adminBanner() {
@@ -2291,6 +2299,7 @@ function adminBanner() {
 function payErr(e) {
   const c = (e && (e.api || e.code)) || '';
   if (c === 'pix_not_configured') return 'O pagamento por Pix ainda não foi configurado pelo responsável do app.';
+  if (c === 'card_not_configured') return 'O pagamento com cartão ainda não foi ligado pelo responsável do app.';
   if (c === 'payment_provider') return 'O Mercado Pago não respondeu. Tente de novo em instantes.';
   if (c === 'rate_limited') return 'Muitas tentativas. Aguarde alguns minutos.';
   if (c === 'unavailable') return 'Sem conexão com o servidor. Verifique a internet.';
@@ -2309,7 +2318,15 @@ function payHTML() {
       '<li>' + ico('check') + 'Sem renovação automática: você paga só quando quiser</li>' +
       '<li>' + ico('check') + 'Seus lançamentos continuam seus, mesmo sem assinar</li></ul>' +
       '<div class="err-msg" id="payErr" role="alert"></div>';
-    return sheetHTML('Assinatura', body, '<button class="btn primary block" data-act="pay-start" id="payGo">' + ico('bolt') + 'Gerar Pix de ' + priceTxt() + '</button>');
+    return sheetHTML('Assinatura', body, '<button class="btn primary block" data-act="pay-start" id="payGo">' + ico('bolt') + 'Pagar ' + priceTxt() + ' com Pix</button>' +
+      (hasCard() ? '<button class="btn block" data-act="pay-card" id="payCard">' + ico('card') + 'Pagar com cartão de crédito</button><p class="cnote" style="margin:0;text-align:center">O cartão é digitado na página do Mercado Pago, nunca neste app.</p>' : ''));
+  }
+  if (P.provider === 'mpc') {                                        // voltou do Mercado Pago (cartão)
+    const st = P.status === 'rejected' ? noteHTML('bad', '<b>O cartão foi recusado.</b> Tente de novo com outro cartão ou pague com Pix.')
+      : P.status === 'divergente' ? noteHTML('bad', 'O pagamento veio com valor diferente. Fale com o responsável pelo app.')
+      : '<p class="waiting"><span class="spin" aria-hidden="true"></span>Confirmando o pagamento com o Mercado Pago. Assim que for aprovado, a conta libera sozinha.</p>';
+    return sheetHTML('Pagamento com cartão', body + st, (P.url ? '<button class="btn primary block" data-act="pay-card-again">' + ico('card') + 'Abrir o Mercado Pago de novo</button>' : '') +
+      '<button class="btn block" data-act="pay-pix-instead">' + ico('bolt') + 'Pagar com Pix</button><button class="btn block" data-act="close">Fechar</button>');
   }
   const img = P.qrImg ? '<img class="qr" alt="QR Code do Pix" src="data:image/png;base64,' + esc(P.qrImg) + '">' : qrSvg(P.code);
   body += '<div class="pix">' + (img ? '<div class="qr-box">' + img + '</div><p class="cnote" style="margin:8px 0 14px;text-align:center">Aponte a câmera do app do banco para o QR Code, ou copie o código abaixo.</p>' : '') +
@@ -2339,8 +2356,30 @@ async function payStart() {
   } catch (e) {
     if (e.api === 'not_needed') { closeSheet(); refreshMe(); toast('Sua conta já está liberada.', 'ok'); return; }
     if (err) err.textContent = payErr(e);
-    if (b) { b.disabled = false; b.lastChild.textContent = 'Gerar Pix de ' + priceTxt(); }
+    if (b) { b.disabled = false; b.lastChild.textContent = 'Pagar ' + priceTxt() + ' com Pix'; }
   }
+}
+async function payCard() {
+  const b = $('#payCard'), err = $('#payErr'); if (b) { b.disabled = true; b.lastChild.textContent = 'Abrindo o Mercado Pago…'; }
+  try {
+    const j = await S.db.req('POST', '/api/pay/start', { method: 'card' });
+    store.set(LAST_PAY, JSON.stringify({ id: j.id, url: j.url, t: Date.now() }));
+    location.href = j.url;                                           // página segura do Mercado Pago; depois ele devolve o cliente para cá
+  } catch (e) {
+    if (e.api === 'not_needed') { closeSheet(); refreshMe(); toast('Sua conta já está liberada.', 'ok'); return; }
+    if (err) err.textContent = payErr(e);
+    if (b) { b.disabled = false; b.lastChild.textContent = 'Pagar com cartão de crédito'; }
+  }
+}
+let payReturned = false;
+function payReturn() {                                               // voltou do Mercado Pago: confere o pagamento sozinho
+  if (payReturned) return; payReturned = true;
+  const q = new URLSearchParams(location.search), r = q.get('pagamento'); if (!r) return;
+  try { history.replaceState(null, '', location.pathname); } catch (e) {}
+  let last = null; try { last = JSON.parse(store.get(LAST_PAY) || 'null'); } catch (e) {}
+  if (!last || !last.id || !S.db) return;
+  S.payFlow = { id: last.id, provider: 'mpc', url: last.url || '', status: r === 'erro' ? 'rejected' : 'pending', t: Date.now() };
+  openSheet(payHTML(), 'pay'); payPoll();
 }
 async function payClaim() {
   const P = S.payFlow; if (!P) return;
@@ -2360,11 +2399,13 @@ function payPoll() {
         if (before) toast('Pagamento confirmado. Obrigado!', 'ok', 4500);
         return;
       }
-      if (j.status === 'rejected') { S.payFlow = null; redrawPay(); toast('Esse pagamento não foi encontrado. Gere um novo Pix ou fale com o responsável.', 'bad', 6000); return; }
-      if (j.status !== P.status && (j.status === 'avisado' || j.status === 'pending')) { P.status = j.status; redrawPay(); }
+      if (j.status === 'approved') {}
+      else if (P.provider === 'mpc') { if (j.status !== P.status) { P.status = j.status; redrawPay(); } }
+      else if (j.status === 'rejected') { S.payFlow = null; redrawPay(); toast('Esse pagamento não foi encontrado. Gere um novo Pix ou fale com o responsável.', 'bad', 6000); return; }
+      else if (j.status !== P.status && (j.status === 'avisado' || j.status === 'pending')) { P.status = j.status; redrawPay(); }
     } catch (e) {}
     payPoll();
-  }, P.provider === 'mp' ? 4000 : 8000);
+  }, P.provider === 'manual' ? 8000 : 4000);
 }
 
 /* ---------- administração (só para o e-mail do administrador) ---------- */
@@ -2397,6 +2438,14 @@ function adminHTML() {
     '<div class="field"><label for="admCity">Cidade</label><input id="admCity" class="inp" maxlength="15" value="' + esc(px.city || '') + '"></div></div>' +
     '<button class="btn block" data-act="adm-pix">Salvar dados do Pix</button>' +
     '<p class="cnote" style="margin:10px 0 0">' + (info.auto ? 'Mercado Pago ligado: os pagamentos são confirmados sozinhos.' : 'O dinheiro cai direto na sua conta, sem taxa. Você confirma o recebimento aqui.') + '</p></div>' +
+    '<div class="sh-label">Cartão de crédito (Mercado Pago)</div><div class="group pad">' +
+    (info.card
+      ? '<div class="mp-on"><span class="badge ok">Ligado</span><span>Os clientes podem pagar com cartão. O pagamento é conferido e liberado sozinho.</span></div>' +
+        (A.mpEnv ? '<p class="cnote" style="margin:10px 0 0">Definido nas configurações do servidor.</p>' : '<button class="btn block" style="margin-top:12px" data-act="adm-mp-off">Desligar o cartão</button>')
+      : '<ol class="steps small"><li>Entre em <b>mercadopago.com.br/developers/panel</b> com a sua conta do Mercado Pago e crie uma aplicação.</li><li>Abra <b>Credenciais de produção</b> e copie o <b>Access Token</b> (começa com APP_USR-).</li><li>Cole aqui e toque em <b>Ligar o cartão</b>.</li></ol>' +
+        '<div class="field" style="margin:14px 0 10px"><label for="admMp">Access Token do Mercado Pago</label><input id="admMp" class="inp" type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="APP_USR-..."></div>' +
+        '<button class="btn block" data-act="adm-mp">Ligar o cartão</button>') +
+    '<p class="cnote" style="margin:10px 0 0">Sem mensalidade. O Mercado Pago desconta uma taxa só do pagamento com cartão (cerca de 4,98% para receber na hora, ou menos se você escolher receber em 14 ou 30 dias no painel dele). O Pix pela sua chave continua sem taxa.</p></div>' +
     '<div class="sh-label">Pagamentos para confirmar</div><div class="group">' + pend + '</div>' +
     '<div class="sh-label">Acesso grátis</div><div class="group pad"><div class="field" style="margin-bottom:10px"><label for="admEmail">E-mail da conta</label><input id="admEmail" class="inp" type="email" inputmode="email" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="a pessoa cria a conta antes"></div>' +
     '<div class="two"><button class="btn" data-act="adm-life">Dar vitalício</button><button class="btn" data-act="adm-days">Liberar ' + daysTxt() + '</button></div>' +
@@ -2406,7 +2455,7 @@ function adminHTML() {
 }
 function redrawAdmin() {
   const sh = $('#sheetRoot .sheet'); if (!sh || !S.sheet || S.sheet.kind !== 'admin') return;
-  const keep = {}; ['admKey', 'admName', 'admCity', 'admEmail'].forEach(id => { const el = $('#' + id); if (el && el.dataset.dirty) keep[id] = el.value; });
+  const keep = {}; ['admKey', 'admName', 'admCity', 'admEmail', 'admMp'].forEach(id => { const el = $('#' + id); if (el && el.dataset.dirty) keep[id] = el.value; });
   const b = $('.sh-b', sh), top = b ? b.scrollTop : 0;
   sh.innerHTML = adminHTML();
   Object.keys(keep).forEach(id => { const el = $('#' + id); if (el) { el.value = keep[id]; el.dataset.dirty = '1'; } });
@@ -2417,13 +2466,13 @@ async function admCall(p, body, okMsg) {
   try { S.adm = await S.db.req('POST', p, body); redrawAdmin(); scheduleRender(); if (okMsg) toast(okMsg, 'ok'); return true; }
   catch (e) {
     const c = e.api || e.code;
-    toast(c === 'no_user' ? 'Não existe conta com esse e-mail. A pessoa precisa criar a conta primeiro.' : c === 'pix_key_invalid' ? 'Chave Pix inválida (sem espaços, até 77 caracteres).' : c === 'denied' ? 'Só o administrador pode fazer isso.' : 'Não foi possível agora. Verifique a internet.', 'bad', 5000);
+    toast(c === 'no_user' ? 'Não existe conta com esse e-mail. A pessoa precisa criar a conta primeiro.' : c === 'mp_token_invalid' ? 'O Mercado Pago não aceitou esse token. Copie o Access Token de produção (começa com APP_USR-) e tente de novo.' : c === 'pix_key_invalid' ? 'Chave Pix inválida (sem espaços, até 77 caracteres).' : c === 'denied' ? 'Só o administrador pode fazer isso.' : 'Não foi possível agora. Verifique a internet.', 'bad', 5000);
     return false;
   }
 }
 async function admBilling(on, el) {
   const A = S.adm || {};
-  if (on && !(A.pix && A.pix.key) && !(A.info && A.info.auto)) { el.checked = false; toast('Cadastre a sua chave Pix antes de ligar a cobrança.', 'bad', 5000); return; }
+  if (on && !(A.pix && A.pix.key) && !(A.info && A.info.card)) { el.checked = false; toast('Cadastre a sua chave Pix (ou ligue o cartão) antes de ligar a cobrança.', 'bad', 5000); return; }
   const ok = await confirmBox(on
     ? { title: 'Ligar a cobrança?', html: '<p class="cnote" style="margin:0">Cada conta ganha ' + ((A.info && A.info.trialHours) || 24) + ' horas de teste grátis. Depois, para lançar, paga ' + priceTxt() + ' por ' + daysTxt() + '. Quem não pagar continua vendo tudo. Vitalícios não pagam.</p>', ok: 'Ligar a cobrança' }
     : { title: 'Desligar a cobrança?', html: '<p class="cnote" style="margin:0">Todo mundo passa a usar de graça até você ligar de novo.</p>', ok: 'Desligar' });
@@ -2436,6 +2485,12 @@ function admPix() {
   if (!name || !city) { toast('Preencha o nome do recebedor e a cidade (aparecem no app do banco de quem paga).', 'bad', 5000); return; }
   ['admKey', 'admName', 'admCity'].forEach(id => { delete $('#' + id).dataset.dirty; });
   admCall('/api/admin/settings', { pix_key: key, pix_name: name, pix_city: city }, 'Dados do Pix salvos');
+}
+async function admMp(off) {
+  if (off) { if (await confirmBox({ title: 'Desligar o cartão?', html: '<p class="cnote" style="margin:0">Os clientes passam a pagar só com Pix. Você pode ligar de novo quando quiser.</p>', ok: 'Desligar' })) admCall('/api/admin/settings', { mp_token: '' }, 'Cartão desligado'); return; }
+  const i = $('#admMp'), t = i ? i.value.trim() : '';
+  if (!/^(APP_USR|TEST)-/.test(t)) { toast('Cole o Access Token de produção do Mercado Pago (começa com APP_USR-).', 'bad', 5000); return; }
+  if (await admCall('/api/admin/settings', { mp_token: t }, 'Cartão ligado: os clientes já podem pagar com cartão')) { if (i) { i.value = ''; delete i.dataset.dirty; } }
 }
 async function admGrant(kind, emailArg) {
   const email = emailKey(emailArg || ($('#admEmail') ? $('#admEmail').value : ''));
@@ -2451,7 +2506,7 @@ async function admConfirm(id, reject) {
     : { title: 'Confirmar o recebimento?', html: '<p class="cnote" style="margin:0">Confirme só se o Pix de <b>' + money(p.amount) + '</b> já caiu na sua conta. ' + esc(p.email) + ' ganha ' + daysTxt() + ' de uso.</p>', ok: 'Recebi, liberar', cls: 'rec' });
   if (ok) admCall('/api/admin/confirm', reject ? { id, reject: true } : { id }, reject ? 'Pagamento recusado' : 'Recebimento confirmado: ' + p.email + ' liberado');
 }
-document.addEventListener('input', ev => { const t = ev.target; if (t && /^adm(Key|Name|City|Email)$/.test(t.id)) t.dataset.dirty = '1'; });
+document.addEventListener('input', ev => { const t = ev.target; if (t && /^adm(Key|Name|City|Email|Mp)$/.test(t.id)) t.dataset.dirty = '1'; });
 document.addEventListener('change', ev => { const t = ev.target; if (t && t.id === 'admBilling') admBilling(t.checked, t); });
 
 /* ===== APP · parte 3: ações, formulário, ajustes, login e início ===== */
@@ -2788,7 +2843,10 @@ const ACT = {
   'calc-key': el => calcKey(el.dataset.k), 'calc-hist': el => calcHist(Number(el.dataset.i)),
   purge: () => openPurge(), 'purge-days': el => { if (S.purge) { S.purge.days = Number(el.dataset.v); purgeScan(); } }, 'purge-backup': () => purgeBackup(), 'purge-run': () => purgeRun(),
   backup: () => backup(), restore: () => { const i = $('#restoreFile'); if (i) { i.value = ''; i.click(); } },
-  'pay-open': () => openPay(), 'pay-start': () => payStart(), 'pay-claim': () => payClaim(),
+  'pay-open': () => openPay(), 'pay-start': () => payStart(), 'pay-claim': () => payClaim(), 'pay-card': () => payCard(),
+  'pay-card-again': () => { if (S.payFlow && S.payFlow.url) location.href = S.payFlow.url; },
+  'pay-pix-instead': () => { S.payFlow = null; redrawPay(); payStart(); },
+  'adm-mp': () => admMp(false), 'adm-mp-off': () => admMp(true),
   'pay-copy': () => { const t = $('#pixCode'); if (t) copyText(t.value, 'Código Pix copiado. Cole no app do banco, em Pix copia e cola.'); },
   admin: () => openAdmin(), 'adm-pix': () => admPix(), 'adm-life': () => admGrant('lifetime'), 'adm-days': () => admGrant('days'),
   'adm-unlife': el => admGrant('unlifetime', el.dataset.email), 'adm-confirm': el => admConfirm(el.dataset.id), 'adm-reject': el => admConfirm(el.dataset.id, true)
