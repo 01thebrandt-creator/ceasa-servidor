@@ -11,7 +11,7 @@ process.on('warning', w => { if (w.name !== 'ExperimentalWarning') console.warn(
 const { DatabaseSync } = require('node:sqlite');
 const { execFile } = require('node:child_process');
 
-const VERSION = '1.2.0';
+const VERSION = '1.2.1';
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || '0.0.0.0';
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
@@ -87,6 +87,21 @@ function gc() {
   const lim = Date.now() - TOMB_MS;
   for (const r of Q.gcUsers.all(lim)) { const m = Q.gcMax.get(r.user_id, lim).m || 0; Q.gcSeq.run(m, r.user_id); Q.gcDel.run(r.user_id, lim); }
   Q.oldSess.run(Date.now() - SESSION_MS);
+}
+/* cópia de segurança automática: uma por dia na pasta dados/copias, guardando as últimas BACKUP_KEEP (padrão 14) */
+const BACKUP_DIR = path.join(DATA_DIR, 'copias'), BACKUP_KEEP = Math.max(2, Number(process.env.BACKUP_KEEP) || 14);
+function autoBackup() {
+  try {
+    fs.mkdirSync(BACKUP_DIR, { recursive: true });
+    const f = path.join(BACKUP_DIR, 'ceasa-' + new Date().toISOString().slice(0, 10) + '.db');
+    if (!fs.existsSync(f)) {
+      const tmp = f + '.tmp'; try { fs.unlinkSync(tmp); } catch (e) {}
+      db.exec("VACUUM INTO '" + tmp.replace(/'/g, "''") + "'"); fs.renameSync(tmp, f);
+      log({ ev: 'copia', arquivo: path.basename(f), kb: Math.round(fs.statSync(f).size / 1024) });
+    }
+    const all = fs.readdirSync(BACKUP_DIR).filter(n => /^ceasa-\d{4}-\d{2}-\d{2}\.db$/.test(n)).sort();
+    all.slice(0, Math.max(0, all.length - BACKUP_KEEP)).forEach(n => fs.unlinkSync(path.join(BACKUP_DIR, n)));
+  } catch (e) { log({ ev: 'copia_erro', msg: String(e && e.message) }); }
 }
 
 /* ---------------- utilidades ---------------- */
@@ -569,6 +584,7 @@ if (require.main === module) {
   cli(process.argv.slice(2)).then(handled => {
     if (handled) { db.close(); return; }
     gc(); setInterval(gc, 6 * 3600e3).unref();
+    if (process.env.AUTO_BACKUP !== '0') { setTimeout(autoBackup, (Number(process.env.BACKUP_FIRST_S) || 300) * 1e3).unref(); setInterval(autoBackup, 3 * 3600e3).unref(); }
     server.listen(PORT, HOST, () => log({ ev: 'ligado', porta: PORT, versao: VERSION, dados: DATA_DIR, publico: PUBLIC_DIR, cobranca: billingOn(), mp: !!mpToken(), autoatualizar: AUTO_UPDATE }));
     const stop = () => { log({ ev: 'desligando' }); server.close(() => { try { db.close(); } catch (e) {} process.exit(0); }); setTimeout(() => process.exit(0), 5000).unref(); };
     process.on('SIGTERM', stop); process.on('SIGINT', stop);
