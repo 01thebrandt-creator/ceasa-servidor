@@ -11,7 +11,7 @@ process.on('warning', w => { if (w.name !== 'ExperimentalWarning') console.warn(
 const { DatabaseSync } = require('node:sqlite');
 const { execFile } = require('node:child_process');
 
-const VERSION = '1.1.1';
+const VERSION = '1.2.0';
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || '0.0.0.0';
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
@@ -149,7 +149,8 @@ const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '').split(',').map(emailKey).f
 const ADMIN_HASHES = new Set((process.env.ADMIN_HASHES || '').split(',').map(s => s.trim()).filter(Boolean).concat(ADMIN_HASHES_FIXED));
 const VIP_EMAILS = (process.env.LIFETIME_EMAILS || '').split(',').map(emailKey).filter(Boolean);
 const VIP_HASHES = new Set((process.env.LIFETIME_HASHES || '').split(',').map(s => s.trim()).filter(Boolean).concat(VIP_HASHES_FIXED));
-const MP_TOKEN = process.env.MP_ACCESS_TOKEN || '';
+const MP_TOKEN_ENV = process.env.MP_ACCESS_TOKEN || '';
+const mpToken = () => MP_TOKEN_ENV || getSet('mp_token') || '';      // Mercado Pago (cartão e Pix automático): variável do servidor ou colado pelo administrador no app
 const MP_API = (process.env.MP_API || 'https://api.mercadopago.com').replace(/\/+$/, '');
 const PUBLIC_URL = (process.env.PUBLIC_URL || '').replace(/\/+$/, '');
 const getSet = k => { const r = Q.getSetting.get(k); return r ? r.v : null; };
@@ -169,7 +170,7 @@ function planOf(u) {
 }
 const canWrite = pl => pl.status !== 'expired';
 const pixCfg = () => ({ key: getSet('pix_key') || '', name: getSet('pix_name') || '', city: getSet('pix_city') || '' });
-function payInfo() { const px = pixCfg(); return { price: PRICE_CENTS, days: PERIOD_DAYS, trialHours: TRIAL_HOURS, auto: !!MP_TOKEN, manual: !!px.key }; }
+function payInfo() { const px = pixCfg(), mp = !!mpToken(); return { price: PRICE_CENTS, days: PERIOD_DAYS, trialHours: TRIAL_HOURS, manual: !!px.key, auto: mp && !px.key, card: mp }; }
 /* Pix "copia e cola" (BR Code, padrão do Banco Central) com valor e identificador da cobrança */
 const asciiUp = (s, max) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9 .\-]/g, '').replace(/\s+/g, ' ').trim().toUpperCase().slice(0, max).trim();
 function crc16(str) { let c = 0xFFFF; for (const b of Buffer.from(str, 'utf8')) { c ^= b << 8; for (let i = 0; i < 8; i++) c = (c & 0x8000) ? ((c << 1) ^ 0x1021) & 0xFFFF : (c << 1) & 0xFFFF; } return c.toString(16).toUpperCase().padStart(4, '0'); }
@@ -188,21 +189,24 @@ function activate(row) {                                          // libera os d
     db.exec('COMMIT'); log({ ev: 'pagamento', user: Number(cur.user_id), id: cur.id }); notify(Number(cur.user_id)); return true;
   } catch (e) { try { db.exec('ROLLBACK'); } catch (x) {} throw e; }
 }
-async function mpCall(method, p, body, idem) {
+async function mpCall(method, p, body, idem, tok) {
   const ac = new AbortController(), t = setTimeout(() => ac.abort(), 15000);
   try {
-    const r = await fetch(MP_API + p, { method, headers: Object.assign({ Authorization: 'Bearer ' + MP_TOKEN, 'Content-Type': 'application/json' }, idem ? { 'X-Idempotency-Key': idem } : {}), body: body ? JSON.stringify(body) : undefined, signal: ac.signal });
+    const r = await fetch(MP_API + p, { method, headers: Object.assign({ Authorization: 'Bearer ' + (tok || mpToken()), 'Content-Type': 'application/json' }, idem ? { 'X-Idempotency-Key': idem } : {}), body: body ? JSON.stringify(body) : undefined, signal: ac.signal });
     const j = await r.json().catch(() => null);
     if (!r.ok) { log({ ev: 'mp_erro', status: r.status }); throw new HttpError(502, 'payment_provider'); }
     return j || {};
   } catch (e) { if (e instanceof HttpError) throw e; throw new HttpError(502, 'payment_provider'); } finally { clearTimeout(t); }
 }
+const mpOk = (row, j) => !!j && j.status === 'approved' && j.external_reference === row.id && j.currency_id === 'BRL' && Math.round(Number(j.transaction_amount) * 100) >= row.amount;
 async function mpCheck(row) {                                     // confere no próprio Mercado Pago (nunca confia só no aviso)
-  if (!MP_TOKEN || row.provider !== 'mp' || !row.ext_id || row.done) return row;
-  const j = await mpCall('GET', '/v1/payments/' + encodeURIComponent(row.ext_id));
-  const ok = j.status === 'approved' && j.external_reference === row.id && j.currency_id === 'BRL' && Math.round(Number(j.transaction_amount) * 100) >= row.amount;
-  Q.payStatus.run(ok ? 'pending' : j.status === 'approved' ? 'divergente' : String(j.status || 'pending').replace(/[^a-z_]/g, '').slice(0, 20) || 'pending', Date.now(), row.id);   // aprovado mas com valor/referência errados: NÃO libera
-  if (ok) activate(row);
+  if (!mpToken() || row.done || (row.provider !== 'mp' && row.provider !== 'mpc')) return row;
+  let pays;
+  if (row.provider === 'mp') { if (!row.ext_id) return row; pays = [await mpCall('GET', '/v1/payments/' + encodeURIComponent(row.ext_id))]; }
+  else { const sr = await mpCall('GET', '/v1/payments/search?sort=date_created&criteria=desc&external_reference=' + encodeURIComponent(row.id)); pays = Array.isArray(sr.results) ? sr.results : []; }
+  const good = pays.find(j => mpOk(row, j)), last = pays[0] || {};
+  Q.payStatus.run(good ? 'pending' : last.status === 'approved' ? 'divergente' : String(last.status || 'pending').replace(/[^a-z_]/g, '').slice(0, 20) || 'pending', Date.now(), row.id);   // aprovado mas com valor/referência errados: NÃO libera
+  if (good) activate(row);
   return Q.payById.get(row.id);
 }
 function publicBase(req) {
@@ -210,31 +214,46 @@ function publicBase(req) {
   const host = String(req.headers['x-forwarded-host'] || req.headers.host || '').split(',')[0].trim();
   return host && /^[A-Za-z0-9.-]+(:\d+)?$/.test(host) ? 'https://' + host : '';
 }
-async function startPayment(req, u) {
+const appBase = req => { const o = String(req.headers.origin || ''); return ALLOWED_ORIGINS.includes(o) ? o : publicBase(req); };   // para onde o cliente volta depois de pagar no Mercado Pago
+const newPayId = () => 'p' + crypto.randomBytes(9).toString('base64url').replace(/[^A-Za-z0-9]/g, '');
+async function startPayment(req, u, method) {
   const pl = planOf(u);
   if (['admin', 'lifetime', 'free'].includes(pl.status)) throw new HttpError(400, 'not_needed');
   if (!limit('pay:' + u.id, 20, 3600e3)) throw new HttpError(429, 'rate_limited');
-  const recent = Date.now() - 20 * 60e3;
-  if (MP_TOKEN) {
-    let row = Q.payOpen.get(u.id, 'mp', recent);
+  const recent = Date.now() - 20 * 60e3, px = pixCfg(), base = publicBase(req);
+  if (method === 'card') {                                        // cartão: o cliente digita o cartão na página do próprio Mercado Pago (o cartão nunca passa por aqui)
+    if (!mpToken()) throw new HttpError(503, 'card_not_configured');
+    const row = Q.payOpen.get(u.id, 'mpc', recent);
     if (row && row.info) return JSON.parse(row.info);
-    const id = 'p' + crypto.randomBytes(9).toString('base64url').replace(/[^A-Za-z0-9]/g, '');
-    const base = publicBase(req);
+    const id = newPayId(), app = appBase(req);
+    const pref = { items: [{ id: 'assinatura', title: 'Controle Ceasa - ' + PERIOD_DAYS + ' dias', quantity: 1, unit_price: PRICE_CENTS / 100, currency_id: 'BRL' }], payer: { email: u.email }, external_reference: id,
+      payment_methods: { installments: 1, excluded_payment_types: [{ id: 'ticket' }, { id: 'atm' }] }, statement_descriptor: 'CONTROLE CEASA' };
+    if (base.startsWith('https://')) pref.notification_url = base + '/api/pay/webhook';
+    if (app.startsWith('https://')) { pref.back_urls = { success: app + '/?pagamento=ok', pending: app + '/?pagamento=pendente', failure: app + '/?pagamento=erro' }; pref.auto_return = 'approved'; }
+    const j = await mpCall('POST', '/checkout/preferences', pref, id);
+    const out = { id, provider: 'mpc', amount: PRICE_CENTS, days: PERIOD_DAYS, url: String(j.init_point || '') };
+    if (!/^https:\/\//.test(out.url)) throw new HttpError(502, 'payment_provider');
+    Q.insPay.run(id, u.id, 'mpc', String(j.id || ''), 'pending', PRICE_CENTS, PERIOD_DAYS, Date.now(), JSON.stringify(out));
+    return out;
+  }
+  if (!px.key && mpToken()) {                                     // Pix automático pelo Mercado Pago (só quando não há chave Pix própria: o Pix direto não tem taxa)
+    const row = Q.payOpen.get(u.id, 'mp', recent);
+    if (row && row.info) return JSON.parse(row.info);
+    const id = newPayId();
     const j = await mpCall('POST', '/v1/payments', Object.assign({ transaction_amount: PRICE_CENTS / 100, description: 'Controle Ceasa - ' + PERIOD_DAYS + ' dias', payment_method_id: 'pix', payer: { email: u.email }, external_reference: id }, base.startsWith('https://') ? { notification_url: base + '/api/pay/webhook' } : {}), id);
     const td = (j.point_of_interaction && j.point_of_interaction.transaction_data) || {};
     const out = { id, provider: 'mp', amount: PRICE_CENTS, days: PERIOD_DAYS, code: String(td.qr_code || ''), qrImg: String(td.qr_code_base64 || '') };
     Q.insPay.run(id, u.id, 'mp', String(j.id), 'pending', PRICE_CENTS, PERIOD_DAYS, Date.now(), JSON.stringify(out));
     return out;
   }
-  const px = pixCfg();
   if (!px.key) throw new HttpError(503, 'pix_not_configured');
   let row = Q.payOpen.get(u.id, 'manual', recent);
-  if (!row) { const id = 'p' + crypto.randomBytes(9).toString('base64url').replace(/[^A-Za-z0-9]/g, ''); Q.insPay.run(id, u.id, 'manual', null, 'pending', PRICE_CENTS, PERIOD_DAYS, Date.now(), null); row = Q.payById.get(id); }
+  if (!row) { const id = newPayId(); Q.insPay.run(id, u.id, 'manual', null, 'pending', PRICE_CENTS, PERIOD_DAYS, Date.now(), null); row = Q.payById.get(id); }
   return { id: row.id, provider: 'manual', amount: PRICE_CENTS, days: PERIOD_DAYS, code: brCode(px.key, px.name, px.city, PRICE_CENTS, row.id), key: px.key, name: px.name };
 }
 function adminOverview() {
   const now = Date.now(), c = Q.planCounts.get(now, now, now), px = pixCfg();
-  return { billing: billingOn(), pix: px, info: payInfo(), pending: Q.payPending.all(now - 30 * 864e5).map(r => ({ id: r.id, email: r.email, amount: Number(r.amount), created: Number(r.created), claimed: r.status === 'avisado' ? Number(r.checked) : 0 })), lifetime: Q.lifetimeList.all().map(r => r.email), lifetimeFixed: (VIP_EMAILS.length || VIP_HASHES.size) ? Q.allEmails.all().map(r => r).filter(isVip).map(r => r.email) : [], counts: { contas: Number(c.n) || 0, vitalicias: Number(c.life) || 0, pagas: Number(c.paid) || 0, teste: Number(c.trial) || 0 } };
+  return { billing: billingOn(), pix: px, info: payInfo(), mpEnv: !!MP_TOKEN_ENV, pending: Q.payPending.all(now - 30 * 864e5).map(r => ({ id: r.id, email: r.email, amount: Number(r.amount), created: Number(r.created), claimed: r.status === 'avisado' ? Number(r.checked) : 0 })), lifetime: Q.lifetimeList.all().map(r => r.email), lifetimeFixed: (VIP_EMAILS.length || VIP_HASHES.size) ? Q.allEmails.all().map(r => r).filter(isVip).map(r => r.email) : [], counts: { contas: Number(c.n) || 0, vitalicias: Number(c.life) || 0, pagas: Number(c.paid) || 0, teste: Number(c.trial) || 0 } };
 }
 function adminUser(email) { const u = Q.userByEmail.get(emailKey(email)); if (!u) throw new HttpError(404, 'no_user'); return u; }
 
@@ -385,13 +404,20 @@ async function api(req, res, url) {
     let b = {}; try { b = await readJson(req); } catch (e) { b = {}; }
     const extId = String(url.searchParams.get('data.id') || url.searchParams.get('id') || (b && b.data && b.data.id) || '').replace(/[^0-9A-Za-z_-]/g, '').slice(0, 40);
     sendJson(req, res, 200, { ok: true });
-    if (extId) { const row = Q.payByExt.get('mp', extId); if (row && !row.done) mpCheck(row).catch(() => {}); }
+    if (extId && mpToken()) (async () => {
+      let row = Q.payByExt.get('mp', extId);
+      if (!row) {                                                 // pagamento com cartão: o aviso traz o número do pagamento; a cobrança é achada pela referência
+        const j = await mpCall('GET', '/v1/payments/' + encodeURIComponent(extId)), r2 = j && j.external_reference ? Q.payById.get(String(j.external_reference)) : null;
+        if (r2 && r2.provider === 'mpc') row = r2;
+      }
+      if (row && !row.done) await mpCheck(row);
+    })().catch(() => {});
     return;
   }
   const au = authUser(req);                                       // daqui para baixo: só com sessão válida
   if (p === '/api/auth/logout' && m === 'POST') { Q.delSess.run(au.tokHash); return sendJson(req, res, 200, { ok: true }); }
   if (p === '/api/auth/me' && m === 'GET') { const u = Q.userById.get(au.id); return sendJson(req, res, 200, { user: { id: au.id, email: au.email }, seq: Number(Q.userSeq.get(au.id).seq), plan: planOf(u), admin: isAdmin(u), pay: payInfo() }); }
-  if (p === '/api/pay/start' && m === 'POST') return sendJson(req, res, 200, await startPayment(req, Q.userById.get(au.id)));
+  if (p === '/api/pay/start' && m === 'POST') { const b = await readJson(req); return sendJson(req, res, 200, await startPayment(req, Q.userById.get(au.id), b.method === 'card' ? 'card' : 'pix')); }
   if (p === '/api/pay/claim' && m === 'POST') {                   // cliente avisa "já paguei" (Pix manual): aparece em destaque para o administrador
     const b = await readJson(req), row = Q.payById.get(String(b.id || ''));
     if (!row || Number(row.user_id) !== au.id || row.provider !== 'manual') throw new HttpError(404, 'not_found');
@@ -401,8 +427,8 @@ async function api(req, res, url) {
   if (p === '/api/pay/status' && m === 'GET') {
     const row = Q.payById.get(String(url.searchParams.get('id') || ''));
     if (!row || Number(row.user_id) !== au.id) throw new HttpError(404, 'not_found');
-    let cur = row; if (row.provider === 'mp' && !row.done && Date.now() - Number(row.checked) > 4000) { try { cur = await mpCheck(row); } catch (e) {} }
-    return sendJson(req, res, 200, { status: cur.done ? 'approved' : cur.status, plan: planOf(Q.userById.get(au.id)) });
+    let cur = row; if ((row.provider === 'mp' || row.provider === 'mpc') && !row.done && Date.now() - Number(row.checked) > 4000) { try { cur = await mpCheck(row); } catch (e) {} }
+    return sendJson(req, res, 200, { status: cur.done ? 'approved' : cur.status, provider: row.provider, plan: planOf(Q.userById.get(au.id)) });
   }
   if (p.startsWith('/api/admin/')) {                              // administração: só e-mails e situação das contas; nunca os lançamentos
     const me = Q.userById.get(au.id); if (!isAdmin(me)) throw new HttpError(403, 'forbidden');
@@ -412,6 +438,12 @@ async function api(req, res, url) {
       if (b.pix_key !== undefined) { const k = String(b.pix_key == null ? '' : b.pix_key).trim(); if (k.length > 77 || /\s/.test(k)) throw new HttpError(400, 'pix_key_invalid'); setSet('pix_key', k); }
       if (b.pix_name !== undefined) setSet('pix_name', asciiUp(b.pix_name, 25));
       if (b.pix_city !== undefined) setSet('pix_city', asciiUp(b.pix_city, 15));
+      if (b.mp_token !== undefined) {                             // token do Mercado Pago: só entra, nunca sai (nenhuma resposta devolve o token)
+        const t = String(b.mp_token == null ? '' : b.mp_token).trim();
+        if (t && !/^(APP_USR|TEST)-[A-Za-z0-9_-]{20,200}$/.test(t)) throw new HttpError(400, 'mp_token_invalid');
+        if (t) { try { await mpCall('GET', '/users/me', null, null, t); } catch (e) { throw new HttpError(400, 'mp_token_invalid'); } }
+        setSet('mp_token', t);
+      }
       if (b.billing !== undefined) { const on = !!b.billing; if (on && !billingOn()) { const now = Date.now(), t = now + TRIAL_HOURS * 3600e3; Q.freshTrials.run(t, t, now); } setSet('billing_on', on ? '1' : '0'); }
       log({ ev: 'admin', kind: 'settings' });
       return sendJson(req, res, 200, adminOverview());
@@ -537,7 +569,7 @@ if (require.main === module) {
   cli(process.argv.slice(2)).then(handled => {
     if (handled) { db.close(); return; }
     gc(); setInterval(gc, 6 * 3600e3).unref();
-    server.listen(PORT, HOST, () => log({ ev: 'ligado', porta: PORT, versao: VERSION, dados: DATA_DIR, publico: PUBLIC_DIR, cobranca: billingOn(), mp: !!MP_TOKEN, autoatualizar: AUTO_UPDATE }));
+    server.listen(PORT, HOST, () => log({ ev: 'ligado', porta: PORT, versao: VERSION, dados: DATA_DIR, publico: PUBLIC_DIR, cobranca: billingOn(), mp: !!mpToken(), autoatualizar: AUTO_UPDATE }));
     const stop = () => { log({ ev: 'desligando' }); server.close(() => { try { db.close(); } catch (e) {} process.exit(0); }); setTimeout(() => process.exit(0), 5000).unref(); };
     process.on('SIGTERM', stop); process.on('SIGINT', stop);
     if (AUTO_UPDATE) { setTimeout(() => checkUpdate(stop), (Number(process.env.AUTO_UPDATE_FIRST_S) || 120) * 1e3).unref(); setInterval(() => checkUpdate(stop), (Number(process.env.AUTO_UPDATE_EVERY_S) || 600) * 1e3).unref(); }
