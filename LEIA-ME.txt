@@ -20,6 +20,7 @@ TESTAR NO SEU COMPUTADOR (2 minutos)
   (Opcional) node test.js  -> roda 85 verificacoes automaticas (contas, seguranca, tempo real, carga).
              node test_billing.js -> 78 verificacoes da assinatura (teste gratis, Pix, cartao, Mercado Pago, vitalicio, administracao).
              bash test_update.sh  -> 6 verificacoes da atualizacao automatica pelo GitHub.
+             bash test_backup.sh  -> 7 verificacoes da copia de seguranca automatica.
 
 COMO ESTA NO AR HOJE (gratis)
   - Servidor: alwaysdata (conta "ceasa", site Node.js). Comando do site:
@@ -83,7 +84,10 @@ VARIAVEIS (todas opcionais)
   ALLOWED_ORIGINS enderecos autorizados a usar a API de outro site, separados por virgula
                   (so se o app ficar em outro endereco, ex.: Netlify; nesse caso edite config.js do app com o endereco do servidor)
 
-COPIA DE SEGURANCA (faca todo dia)
+COPIA DE SEGURANCA
+  Automatica: o servidor faz sozinho uma copia por dia em DATA_DIR/copias/ceasa-AAAA-MM-DD.db
+  e guarda as ultimas 14 (BACKUP_KEEP=30 guarda 30; AUTO_BACKUP=0 desliga).
+  Manual, quando quiser:
   node server.js backup /caminho/copia.db     (pode rodar com o servidor ligado; o arquivo e consistente)
   Guarde a copia em outro lugar. Para restaurar, pare o servidor e troque DATA_DIR/ceasa.db pela copia.
   Cada usuario tambem pode baixar a propria copia em Ajustes > Baixar copia de seguranca.
