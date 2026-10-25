@@ -18,7 +18,7 @@ TESTAR NO SEU COMPUTADOR (2 minutos)
   2. Nesta pasta:  node server.js
   3. Abra http://localhost:3000, toque em "Criar conta". Abra em outro navegador/celular na mesma rede para ver a sincronizacao.
   (Opcional) node test.js  -> roda 85 verificacoes automaticas (contas, seguranca, tempo real, carga).
-             node test_billing.js -> 56 verificacoes da assinatura (teste gratis, Pix, Mercado Pago, vitalicio, administracao).
+             node test_billing.js -> 78 verificacoes da assinatura (teste gratis, Pix, cartao, Mercado Pago, vitalicio, administracao).
              bash test_update.sh  -> 6 verificacoes da atualizacao automatica pelo GitHub.
 
 COMO ESTA NO AR HOJE (gratis)
@@ -43,9 +43,13 @@ ASSINATURA (vem DESLIGADA: todo mundo usa de graca ate o administrador ligar)
     pagamentos e da acesso vitalicio ou dias gratis digitando so o e-mail (sem senha, sem ver os lancamentos).
   - Pix sem taxa (padrao): o app gera o Pix copia e cola + QR Code com o valor. O cliente toca "Ja paguei";
     o administrador confere no banco e toca "Confirmar recebimento". A conta libera na hora.
-  - Pix automatico (opcional): Mercado Pago cobra cerca de 0,99% por Pix. Coloque MP_ACCESS_TOKEN (do proprio
-    Mercado Pago) nas variaveis do servidor; o servidor confere cada pagamento direto no Mercado Pago (valor,
-    referencia e situacao) antes de liberar, e o aviso automatico chega em /api/pay/webhook.
+  - Cartao de credito (opcional, Mercado Pago): o administrador cola o Access Token de producao do Mercado Pago em
+    Ajustes > Administracao (ou na variavel MP_ACCESS_TOKEN). O cliente digita o cartao na pagina do proprio Mercado Pago
+    (o cartao nunca passa pelo servidor nem pelo app), volta para o app e a conta libera sozinha: o servidor confere cada
+    pagamento direto no Mercado Pago (valor, referencia e situacao). Sem mensalidade; o Mercado Pago desconta a taxa do cartao
+    (cerca de 4,98% para receber na hora, menos em 14 ou 30 dias). O token nunca e devolvido ao app.
+  - Com o token e SEM chave Pix propria, o Pix tambem passa pelo Mercado Pago (automatico, cerca de 0,99%).
+    Com chave Pix propria, o Pix continua direto para a sua conta, sem taxa.
   - Acesso vitalicio fixo (ex.: amigos): VIP_HASHES_FIXED em server.js, ou a variavel LIFETIME_EMAILS.
   - Outras variaveis: PRICE_CENTS (2990), PERIOD_DAYS (30), TRIAL_HOURS (24), PUBLIC_URL (endereco publico do servidor).
 
