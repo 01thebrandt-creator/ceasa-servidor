@@ -1,0 +1,8 @@
+{
+  "name": "controle-ceasa-servidor",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Servidor do Controle Ceasa: contas e sincronização em tempo real",
+  "engines": { "node": ">=22.13" },
+  "scripts": { "start": "node server.js", "test": "node test.js" }
+}
