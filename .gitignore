@@ -1,0 +1,6 @@
+app/site/
+app/shots/
+__pycache__/
+node_modules/
+data/
+*.pyc

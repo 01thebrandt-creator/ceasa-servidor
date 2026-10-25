@@ -1,0 +1,3 @@
+# Controle Ceasa: o app e a API ficam no servidor (que se atualiza sozinho pelo GitHub).
+# Este site só repassa tudo para lá, mantendo o mesmo link de sempre.
+/*  https://ceasa.alwaysdata.net/:splat  200

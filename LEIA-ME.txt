@@ -1,0 +1,113 @@
+CONTROLE CEASA - SERVIDOR
+=========================
+
+O QUE E
+Servidor proprio (sem Firebase) do Controle Ceasa. Ele cuida de:
+  - contas (e-mail e senha); cada e-mail tem seus registros totalmente separados;
+  - o MESMO e-mail e senha entram em qualquer aparelho (Loja, Caminhao...) e todos veem a mesma carga ao mesmo tempo;
+  - sincronizacao em tempo real entre os aparelhos (uma mudanca chega aos outros em menos de 1 segundo);
+  - entrega o aplicativo (pasta public/) e a API no MESMO endereco: nao ha nada para configurar nos aparelhos.
+Sem dependencias para instalar: so o Node.js. Os dados ficam em um arquivo SQLite.
+
+O QUE VOCE PRECISA
+  - Node.js 22.13 ou mais novo (ou Docker).
+  - Um lugar que fique ligado 24 horas, com DISCO PERSISTENTE e HTTPS (cadeado no navegador).
+
+TESTAR NO SEU COMPUTADOR (2 minutos)
+  1. Instale o Node.js 22 (nodejs.org).
+  2. Nesta pasta:  node server.js
+  3. Abra http://localhost:3000, toque em "Criar conta". Abra em outro navegador/celular na mesma rede para ver a sincronizacao.
+  (Opcional) node test.js  -> roda 85 verificacoes automaticas (contas, seguranca, tempo real, carga).
+             node test_billing.js -> 56 verificacoes da assinatura (teste gratis, Pix, Mercado Pago, vitalicio, administracao).
+             bash test_update.sh  -> 6 verificacoes da atualizacao automatica pelo GitHub.
+
+COMO ESTA NO AR HOJE (gratis)
+  - Servidor: alwaysdata (conta "ceasa", site Node.js). Comando do site:
+      bash -c 'cd "$HOME" && if [ -d ceasa-servidor/.git ]; then git -C ceasa-servidor pull -q --ff-only || true; else git clone -q https://github.com/01thebrandt-creator/ceasa-servidor.git ceasa-servidor; fi; cd ceasa-servidor && exec node server.js'
+    Variaveis: DATA_DIR=/home/ceasa/ceasa-dados  TRUST_PROXY=1  ALLOWED_ORIGINS=https://controle-ceasa.netlify.app
+  - Link que os clientes usam: https://controle-ceasa.netlify.app . O Netlify so repassa tudo para o servidor
+    (arquivos _redirects e config.js da pasta netlify/ do codigo-fonte). O app (pasta public/) vem do servidor.
+  - Codigo: github.com/01thebrandt-creator/ceasa-servidor (publico; nenhum segredo fica no codigo).
+
+ATUALIZACAO AUTOMATICA (nao precisa mandar link novo para ninguem)
+  - Mudou algo no GitHub? O servidor confere a cada 10 minutos (e sempre que liga), testa se a versao nova
+    compila e reinicia sozinho com ela. O app nos celulares pega a versao nova ao ser reaberto. O link nunca muda.
+  - Versao com erro de sintaxe e recusada (o servidor continua com a antiga). Desligar: AUTO_UPDATE=0.
+
+ASSINATURA (vem DESLIGADA: todo mundo usa de graca ate o administrador ligar)
+  - Preco R$ 29,90 por 30 dias; teste gratis de 24 horas; sem renovacao automatica.
+  - Conta vencida NAO e bloqueada: continua vendo tudo, so nao lanca. O que for lancado fica guardado no aparelho
+    e e enviado assim que a conta for liberada (nada se perde).
+  - Administrador: o e-mail dele fica no codigo so como "hash" (ADMIN_HASHES_FIXED em server.js) ou na variavel
+    ADMIN_EMAILS. Ele ve "Administracao" em Ajustes: liga/desliga a cobranca, cadastra a chave Pix, confirma
+    pagamentos e da acesso vitalicio ou dias gratis digitando so o e-mail (sem senha, sem ver os lancamentos).
+  - Pix sem taxa (padrao): o app gera o Pix copia e cola + QR Code com o valor. O cliente toca "Ja paguei";
+    o administrador confere no banco e toca "Confirmar recebimento". A conta libera na hora.
+  - Pix automatico (opcional): Mercado Pago cobra cerca de 0,99% por Pix. Coloque MP_ACCESS_TOKEN (do proprio
+    Mercado Pago) nas variaveis do servidor; o servidor confere cada pagamento direto no Mercado Pago (valor,
+    referencia e situacao) antes de liberar, e o aviso automatico chega em /api/pay/webhook.
+  - Acesso vitalicio fixo (ex.: amigos): VIP_HASHES_FIXED em server.js, ou a variavel LIFETIME_EMAILS.
+  - Outras variaveis: PRICE_CENTS (2990), PERIOD_DAYS (30), TRIAL_HOURS (24), PUBLIC_URL (endereco publico do servidor).
+
+COLOCAR NO AR (escolha UMA opcao)
+  A) Docker em qualquer servidor (VPS):   docker compose up -d --build
+     Os dados ficam no volume "ceasa-dados". Depois coloque HTTPS na frente (opcao B abaixo, Caddy).
+  B) Servidor (VPS) com Node: rode "node server.js" com TRUST_PROXY=1 e use o Caddy para o HTTPS (veja Caddyfile.exemplo).
+     Para manter ligado apos reiniciar o servidor, use systemd ou pm2.
+  C) Hospedagem de aplicativos (Render, Railway, Fly.io...): crie um servico Node com Start Command "node server.js",
+     monte um DISCO PERSISTENTE em /data e defina as variaveis DATA_DIR=/data e TRUST_PROXY=1.
+     ATENCAO: planos gratuitos costumam apagar o disco ao reiniciar. Para dados de verdade use disco persistente.
+  D) Railway (railway.com, plano Hobby, cerca de US$ 5 por mes, com disco persistente). Passo a passo:
+     1. Crie uma conta gratuita no github.com e um repositorio PRIVADO (ex.: ceasa-servidor). Na pagina do repositorio,
+        "uploading an existing file": arraste TODO o conteudo deste ZIP (server.js, package.json, Dockerfile e a pasta public)
+        e toque em "Commit changes".
+     2. No railway.com: crie a conta, escolha o plano Hobby, toque em "New Project" > "Deploy from GitHub repo" e escolha o
+        repositorio. O Railway usa o Dockerfile sozinho.
+     3. No servico criado, aba "Variables", adicione:  DATA_DIR=/data   TRUST_PROXY=1   RAILWAY_RUN_UID=0
+     4. Adicione um Volume ao servico (botao direito no servico > "Attach volume", ou Ctrl/Cmd+K e digite "volume")
+        com o caminho de montagem  /data   (e ali que ficam as contas e os lancamentos).
+     5. Aba "Settings" > "Networking" > "Generate Domain". O endereco https://....up.railway.app e o aplicativo.
+     6. Abra o endereco, toque em "Criar conta" e depois em Ajustes > "Verificar a conexao com o servidor".
+  Depois, no celular: abra o endereco, "Criar conta" e "Adicionar a tela inicial" (vira um icone de aplicativo).
+
+VARIAVEIS (todas opcionais)
+  PORT            porta (padrao 3000)
+  DATA_DIR        pasta do banco de dados (padrao ./data). Tem que ser disco persistente.
+  HOST            interface de rede (padrao 0.0.0.0)
+  TRUST_PROXY=1   use quando houver proxy HTTPS na frente (para ler o IP real nos limites de tentativas)
+  SIGNUP_OPEN=0   fecha a criacao de contas novas (so quem ja tem conta entra)
+  ALLOWED_ORIGINS enderecos autorizados a usar a API de outro site, separados por virgula
+                  (so se o app ficar em outro endereco, ex.: Netlify; nesse caso edite config.js do app com o endereco do servidor)
+
+COPIA DE SEGURANCA (faca todo dia)
+  node server.js backup /caminho/copia.db     (pode rodar com o servidor ligado; o arquivo e consistente)
+  Guarde a copia em outro lugar. Para restaurar, pare o servidor e troque DATA_DIR/ceasa.db pela copia.
+  Cada usuario tambem pode baixar a propria copia em Ajustes > Baixar copia de seguranca.
+
+ADMINISTRACAO
+  node server.js stats                      quantas contas e registros
+  node server.js export email@exemplo.com   exporta os dados de uma conta (JSON)
+  node server.js reset-password email@...   cria uma senha temporaria e um novo codigo de recuperacao
+
+ATUALIZAR O APP
+  Troque a pasta public/ e reabra o app (ele se atualiza sozinho). O banco nao muda.
+
+SEGURANCA (o que ja esta feito)
+  - Senhas guardadas com scrypt (nunca em texto); sessoes por token aleatorio (so o hash fica no banco).
+  - Cada conta so enxerga os proprios dados (verificado por testes); consultas parametrizadas (sem injecao de SQL).
+  - Limite de tentativas: bloqueio temporario depois de 8 senhas erradas e limite de contas novas por endereco.
+  - Cabecalhos de seguranca e CSP com hash (sem scripts de terceiros); respostas sem detalhes internos; limites de tamanho.
+  - Recuperacao de senha por CODIGO (mostrado uma vez ao criar a conta e renovavel em Ajustes). Nao envia e-mail.
+  O que depende de voce: HTTPS no servidor, copias de seguranca, manter o Node atualizado.
+
+LIMITES (honestidade)
+  - Um unico servidor (SQLite), pensado para a operacao de um grupo de lojas/caminhoes: testado com dezenas de escritas simultaneas
+    e varios aparelhos em tempo real; NAO foi medido com centenas ou milhares de usuarios e nao e uma plataforma distribuida.
+  - Nao ha recuperacao de senha por e-mail; sem a senha e sem o codigo so o administrador consegue ajudar (reset-password).
+  - A hospedagem, o HTTPS e as copias sao de responsabilidade de quem publica.
+  - Testado aqui: o servidor, a API e o app em navegador real; o servidor rodando como usuario comum, com a pasta do app
+    SOMENTE LEITURA e os dados em volume separado (e o reinicio do processo sem perder nada), que e o que o Dockerfile faz;
+    e o docker-compose.yml (validado com "docker compose config").
+  - NAO foi testado aqui: o "docker build" em si (a rede do ambiente de teste bloqueia o download da imagem node:22-alpine),
+    o HTTPS e hospedagens especificas (Render, Railway, Fly.io...). Se o "docker compose up" der erro, use a opcao B
+    (node server.js direto), que e o caminho testado; os dados ficam sempre em DATA_DIR/ceasa.db.
