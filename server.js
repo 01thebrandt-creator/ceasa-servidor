@@ -11,7 +11,7 @@ process.on('warning', w => { if (w.name !== 'ExperimentalWarning') console.warn(
 const { DatabaseSync } = require('node:sqlite');
 const { execFile } = require('node:child_process');
 
-const VERSION = '1.1.0';
+const VERSION = '1.1.1';
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || '0.0.0.0';
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
@@ -22,7 +22,7 @@ const TRUST_PROXY = process.env.TRUST_PROXY === '1';
 const MAX_BODY = 1024 * 1024, MAX_DOC = 64 * 1024, MAX_OPS = 200, MAX_DOCS_USER = 300000;
 const SESSION_MS = 90 * 864e5, TOMB_MS = 30 * 864e5;
 const LOG_QUIET = process.env.LOG_QUIET === '1';
-const ADMIN_HASHES_FIXED = [];   // sha256('ceasa-admin|' + e-mail) do administrador: o e-mail não fica exposto no código
+const ADMIN_HASHES_FIXED = ['7394f2c38be37845b7cdc6a8af0d9fef8d4f5b3bcbbe5226aa566546b6087059'];   // sha256('ceasa-admin|' + e-mail) do administrador: o e-mail não fica exposto no código
 const VIP_HASHES_FIXED = [];     // sha256('ceasa-vip|' + e-mail): acesso vitalício gratuito (ex.: amigos da família), sem expor o e-mail
 const log = o => { if (!LOG_QUIET) console.log(JSON.stringify(Object.assign({ t: new Date().toISOString() }, o))); };
 
